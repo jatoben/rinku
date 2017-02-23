@@ -172,6 +172,7 @@ rinku_autolink(
 	size_t i, end;
 	char active_chars[256] = {0};
 	int link_count = 0;
+	struct autolink_ctx ctx = { .flags = flags, .schemes = schemes };
 
 	if (!text || size == 0)
 		return 0;
@@ -191,8 +192,6 @@ rinku_autolink(
 		while (rinku_isspace(*link_attr))
 			link_attr++;
 	}
-
-	struct autolink_ctx ctx = { .flags = flags, .schemes = schemes };
 
 	bufgrow(ob, size);
 
