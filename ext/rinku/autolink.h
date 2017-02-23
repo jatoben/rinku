@@ -33,20 +33,25 @@ struct autolink_pos {
 	size_t end;
 };
 
+struct autolink_ctx {
+	unsigned int flags;
+	const char **schemes;
+};
+
 bool
-autolink_issafe(const uint8_t *link, size_t link_len);
+autolink_issafe(const uint8_t *link, size_t link_len, const char **schemes);
 
 bool
 autolink__www(struct autolink_pos *res,
-	const uint8_t *data, size_t pos, size_t size, unsigned int flags);
+	const uint8_t *data, size_t pos, size_t size, const struct autolink_ctx *ctx);
 
 bool
 autolink__email(struct autolink_pos *res,
-	const uint8_t *data, size_t pos, size_t size, unsigned int flags);
+	const uint8_t *data, size_t pos, size_t size, const struct autolink_ctx *ctx);
 
 bool
 autolink__url(struct autolink_pos *res,
-	const uint8_t *data, size_t pos, size_t size, unsigned int flags);
+	const uint8_t *data, size_t pos, size_t size, const struct autolink_ctx *ctx);
 
 #ifdef __cplusplus
 }

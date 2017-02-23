@@ -28,20 +28,13 @@
 #endif
 
 bool
-autolink_issafe(const uint8_t *link, size_t link_len)
+autolink_issafe(const uint8_t *link, size_t link_len, const char **valid_schemes)
 {
-	static const size_t valid_uris_count = 5;
-	static const char *valid_uris[] = {
-		"/", "http://", "https://", "ftp://", "mailto:"
-	};
-
-	size_t i;
-
-	for (i = 0; i < valid_uris_count; ++i) {
-		size_t len = strlen(valid_uris[i]);
+	for (size_t i = 0; valid_schemes[i] != NULL; ++i) {
+		size_t len = strlen(valid_schemes[i]);
 
 		if (link_len > len &&
-			strncasecmp((char *)link, valid_uris[i], len) == 0 &&
+			strncasecmp((char *)link, valid_schemes[i], len) == 0 &&
 			rinku_isalnum(link[len]))
 			return true;
 	}
@@ -193,7 +186,7 @@ autolink__www(
 	const uint8_t *data,
 	size_t pos,
 	size_t size,
-	unsigned int flags)
+	const struct autolink_ctx *ctx)
 {
 	int32_t boundary;
 	assert(data[pos] == 'w' || data[pos] == 'W');
@@ -226,7 +219,7 @@ autolink__email(
 	const uint8_t *data,
 	size_t pos,
 	size_t size,
-	unsigned int flags)
+	const struct autolink_ctx *ctx)
 {
 	int nb = 0, np = 0;
 	assert(data[pos] == '@');
@@ -275,7 +268,7 @@ autolink__url(
 	const uint8_t *data,
 	size_t pos,
 	size_t size,
-	unsigned int flags)
+	const struct autolink_ctx *ctx)
 {
 	assert(data[pos] == ':');
 
@@ -285,7 +278,7 @@ autolink__url(
 	link->start = pos + 3;
 	link->end = 0;
 
-	if (!check_domain(data, size, link, flags & AUTOLINK_SHORT_DOMAINS))
+	if (!check_domain(data, size, link, ctx->flags & AUTOLINK_SHORT_DOMAINS))
 		return false;
 
 	link->start = pos;
@@ -294,7 +287,7 @@ autolink__url(
 	while (link->start && rinku_isalpha(data[link->start - 1]))
 		link->start--;
 
-	if (!autolink_issafe(data + link->start, size - link->start))
+	if (!autolink_issafe(data + link->start, size - link->start, ctx->schemes))
 		return false;
 
 	return autolink_delim_iter(data, link);
