@@ -65,24 +65,28 @@ autolink_callback(struct buf *link_text,
 	bufput(link_text, RSTRING_PTR(rb_link_text), RSTRING_LEN(rb_link_text));
 }
 
-const char **rinku_load_tags(VALUE rb_skip)
+const char **rinku_load_strarray(VALUE rb_arr, const char **prepend, size_t prepend_count)
 {
-	const char **skip_tags;
+	const char **ret;
 	size_t i, count;
 
-	Check_Type(rb_skip, T_ARRAY);
+	Check_Type(rb_arr, T_ARRAY);
 
-	count = RARRAY_LEN(rb_skip);
-	skip_tags = xmalloc(sizeof(void *) * (count + 1));
+	count = RARRAY_LEN(rb_arr);
+	ret = xmalloc(sizeof(void *) * (count + prepend_count + 1));
 
-	for (i = 0; i < count; ++i) {
-		VALUE tag = rb_ary_entry(rb_skip, i);
-		Check_Type(tag, T_STRING);
-		skip_tags[i] = StringValueCStr(tag);
+	for(i = 0; i < prepend_count; i++) {
+		ret[i] = prepend[i];
 	}
 
-	skip_tags[count] = NULL;
-	return skip_tags;
+	for (i = 0; i < count; ++i) {
+		VALUE val = rb_ary_entry(rb_arr, i);
+		Check_Type(val, T_STRING);
+		ret[i + prepend_count] = StringValueCStr(val);
+	}
+
+	ret[i + prepend_count] = NULL;
+	return ret;
 }
 
 /*
@@ -151,18 +155,21 @@ static VALUE
 rb_rinku_autolink(int argc, VALUE *argv, VALUE self)
 {
 	static const char *SKIP_TAGS[] = {"a", "pre", "code", "kbd", "script", NULL};
+	static const char *VALID_SCHEMES[] = {"/", "http://", "https://", "ftp://", "mailto:", NULL};
+	static const size_t VALID_SCHEMES_COUNT = 5;
 
-	VALUE result, rb_text, rb_mode, rb_html, rb_skip, rb_flags, rb_block;
+	VALUE result, rb_text, rb_mode, rb_html, rb_skip, rb_flags, rb_schemes, rb_block;
 	rb_encoding *text_encoding;
 	struct buf *output_buf;
 	int link_mode = AUTOLINK_ALL, count;
 	unsigned int link_flags = 0;
 	const char *link_attr = NULL;
 	const char **skip_tags = NULL;
+	const char **schemes = NULL;
 	struct callback_data cbdata;
 
-	rb_scan_args(argc, argv, "14&", &rb_text, &rb_mode,
-		&rb_html, &rb_skip, &rb_flags, &rb_block); 
+	rb_scan_args(argc, argv, "15&", &rb_text, &rb_mode,
+		&rb_html, &rb_skip, &rb_flags, &rb_schemes, &rb_block);
 
 	text_encoding = validate_encoding(rb_text);
 
@@ -199,7 +206,13 @@ rb_rinku_autolink(int argc, VALUE *argv, VALUE self)
 	if (NIL_P(rb_skip)) {
 		skip_tags = SKIP_TAGS;
 	} else {
-		skip_tags = rinku_load_tags(rb_skip);
+		skip_tags = rinku_load_strarray(rb_skip, NULL, 0);
+	}
+
+	if(NIL_P(rb_schemes)) {
+		schemes = VALID_SCHEMES;
+	} else {
+		schemes = rinku_load_strarray(rb_schemes, VALID_SCHEMES, VALID_SCHEMES_COUNT);
 	}
 
 	output_buf = bufnew(32);
@@ -213,6 +226,7 @@ rb_rinku_autolink(int argc, VALUE *argv, VALUE self)
 		link_flags,
 		link_attr,
 		skip_tags,
+		schemes,
 		RTEST(rb_block) ? &autolink_callback : NULL,
 		(void*)&cbdata);
 
@@ -225,6 +239,9 @@ rb_rinku_autolink(int argc, VALUE *argv, VALUE self)
 
 	if (skip_tags != SKIP_TAGS)
 		xfree(skip_tags);
+
+	if (schemes != VALID_SCHEMES)
+		xfree(schemes);
 
 	bufrelease(output_buf);
 	return result;
