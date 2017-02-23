@@ -93,8 +93,8 @@ const char **rinku_load_strarray(VALUE rb_arr, const char **prepend, size_t prep
  * Document-method: auto_link
  *
  * call-seq:
- *  auto_link(text, mode=:all, link_attr=nil, skip_tags=nil, flags=0)
- *  auto_link(text, mode=:all, link_attr=nil, skip_tags=nil, flags=0) { |link_text| ... }
+ *  auto_link(text, mode=:all, link_attr=nil, skip_tags=nil, flags=0, schemes=nil)
+ *  auto_link(text, mode=:all, link_attr=nil, skip_tags=nil, flags=0, schemes=nil) { |link_text| ... }
  *
  * Parses a block of text looking for "safe" urls or email addresses,
  * and turns them into HTML links with the given attributes.
@@ -106,11 +106,6 @@ const char **rinku_load_strarray(VALUE rb_arr, const char **prepend, size_t prep
  * NOTE: If the input text is HTML, it's expected to be already escaped.
  * Rinku will perform no escaping.
  *
- * NOTE: Currently the follow protocols are considered safe and are the
- * only ones that will be autolinked.
- *
- *     http:// https:// ftp:// mailto://
- *
  * Email addresses are also autolinked by default. URLs without a protocol
  * specifier but starting with 'www.' will also be autolinked, defaulting to
  * the 'http://' protocol.
@@ -119,8 +114,8 @@ const char **rinku_load_strarray(VALUE rb_arr, const char **prepend, size_t prep
  * HTML, Rinku is smart enough to skip the links that are already enclosed in `<a>`
  * tags.`
  *
- * -   `mode` is a symbol, either `:all`, `:urls` or `:email_addresses`, 
- * which specifies which kind of links will be auto-linked. 
+ * -   `mode` is a symbol, either `:all`, `:urls` or `:email_addresses`,
+ * which specifies which kind of links will be auto-linked.
  *
  * -   `link_attr` is a string containing the link attributes for each link that
  * will be generated. These attributes are not sanitized and will be include as-is
@@ -139,6 +134,9 @@ const char **rinku_load_strarray(VALUE rb_arr, const char **prepend, size_t prep
  *
  * -   `flag` is an optional boolean value specifying whether to recognize
  * 'http://foo' as a valid domain, or require at least one '.'. It defaults to false.
+ *
+ * -   `schemes` is an array of additional URL schemes that should be autolinked.
+ * `http://`, `https://`, `ftp://`, and `mailto:` are always autolinked.
  *
  * -   `&block` is an optional block argument. If a block is passed, it will
  * be yielded for each found link in the text, and its return value will be used instead
