@@ -30,7 +30,8 @@
 bool
 autolink_issafe(const uint8_t *link, size_t link_len, const char **valid_schemes)
 {
-	for (size_t i = 0; valid_schemes[i] != NULL; ++i) {
+	size_t i;
+	for (i = 0; valid_schemes[i] != NULL; ++i) {
 		size_t len = strlen(valid_schemes[i]);
 
 		if (link_len > len &&
