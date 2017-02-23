@@ -19,7 +19,8 @@ rinku_autolink(
 	unsigned int flags,
 	const char *link_attr,
 	const char **skip_tags,
+	const char **schemes,
 	void (*link_text_cb)(struct buf *, const uint8_t *, size_t, void *),
 	void *payload);
-	
+
 #endif

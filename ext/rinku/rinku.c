@@ -38,7 +38,7 @@ typedef enum {
 } autolink_action;
 
 typedef bool (*autolink_parse_cb)(
-	struct autolink_pos *, const uint8_t *, size_t, size_t, unsigned int);
+	struct autolink_pos *, const uint8_t *, size_t, size_t, const struct autolink_ctx *);
 
 static autolink_parse_cb g_callbacks[] = {
 	NULL,
@@ -165,6 +165,7 @@ rinku_autolink(
 	unsigned int flags,
 	const char *link_attr,
 	const char **skip_tags,
+	const char **schemes,
 	void (*link_text_cb)(struct buf *, const uint8_t *, size_t, void *),
 	void *payload)
 {
@@ -191,6 +192,8 @@ rinku_autolink(
 			link_attr++;
 	}
 
+	struct autolink_ctx ctx = { .flags = flags, .schemes = schemes };
+
 	bufgrow(ob, size);
 
 	i = end = 0;
@@ -216,7 +219,7 @@ rinku_autolink(
 		}
 
 		link_found = g_callbacks[(int)action](
-			&link, text, end, size, flags);
+			&link, text, end, size, &ctx);
 
 		if (link_found && link.start >= i) {
 			const uint8_t *link_str = text + link.start;
