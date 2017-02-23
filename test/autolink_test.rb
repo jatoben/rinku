@@ -285,6 +285,15 @@ This is just a test. <a href="http://www.pokemon.com">http://www.pokemon.com</a>
     assert_linked '<a href="http://www.rubyonrails.com">Ruby On Rails</a>', '<a href="http://www.rubyonrails.com">Ruby On Rails</a>'
   end
 
+  def test_autolink_custom_schemes
+    urls = %w(ssh://foo.example.com irc://irc.undernet.org:6667/mIRC https://google.com foo://quux.com)
+    linked_urls = urls.map { |u| u.start_with?("foo") ?  u : "<a href=\"#{u}\">#{u}</a>" }
+
+    urls.each_index do |i|
+      assert_equal linked_urls[i], Rinku.auto_link(urls[i], nil, nil, nil, 0, %w(ssh:// irc://))
+    end
+  end
+
   def test_copies_source_encoding
     str = "http://www.bash.org"
 
